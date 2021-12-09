@@ -1,0 +1,5 @@
+ torch==1.5.1
+ pytorch-lightning==1.0.3
+ wandb==0.9.1
+ phate==1.0.4
+ networkx==2.5

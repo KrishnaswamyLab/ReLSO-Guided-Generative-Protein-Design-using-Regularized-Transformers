@@ -30,7 +30,7 @@ and efficient optimization of protein sequences.
 
 This repo accompanies the following publication:
 
-Egbert Castro, Abhinav Godavarthi, Julien Rubinfien, Smita Krishnaswamy. Guided Generative Protein Design using Regularized Transformers. Nature Machine Intelligence, in review (2021).
+*Egbert Castro, Abhinav Godavarthi, Julien Rubinfien, Smita Krishnaswamy. Guided Generative Protein Design using Regularized Transformers. Nature Machine Intelligence, in review (2021).*
 
 ## How to run   
 ---
