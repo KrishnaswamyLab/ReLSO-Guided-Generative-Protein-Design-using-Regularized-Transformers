@@ -60,7 +60,7 @@ python train_relso.py  --data gifford
 
 ### available dataset args:
 
-        gifford, AMIE_PSEAE, DLG_RAT, GB1_WU, RASH_HUMAN, RL401_YEAST, UBE4B_MOUSE, YAP1_HUMAN, GFP, TAPE (GFP by TAPE splits)
+        gifford, GB1_WU, GFP, TAPE
 
 ### available auxnetwork args:
 
@@ -120,4 +120,8 @@ which will run the currently implemented algorithms and save plots of their opti
 
 ## Original data sources
 
-- GIFFORD: 
+- GIFFORD: https://github.com/gifford-lab/antibody-2019/tree/master/data/training%20data
+- GB1: https://elifesciences.org/articles/16965#data
+- GFP: https://figshare.com/articles/dataset/Local_fitness_landscape_of_the_green_fluorescent_protein/3102154
+- TAPE: https://github.com/songlab-cal/tape#data
+
