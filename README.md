@@ -61,7 +61,7 @@ python train_relso.py  --data gifford
 
 ### available auxnetwork args:
 
-        base_reg, dropout_reg
+        base_reg
 
 
 ## Original data sources
