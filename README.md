@@ -6,9 +6,6 @@ for Sequence Design
 - [Citation](#citation)
 - [How to run   ](#how-to-run)
 - [Training models](training-models)
-- [Logging](#logging) 
-- [Model Class](#model-class)
-- [Optimizing in latent space](#optimizing-in-latent-space)
 - [Original data source](#Original-data-sources)
 
 
@@ -38,11 +35,11 @@ This repo accompanies the following publication:
 First, install dependencies   
 ```bash
 # clone project   
-git clone https://github.com/ec1340/relso 
+git clone https://github.com/KrishnaswamyLab/ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers.git
 
 
 # install project   
-cd relso 
+cd ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers 
 pip install -e .   
 pip install -r requirements.txt
  ```   
@@ -65,57 +62,6 @@ python train_relso.py  --data gifford
 ### available auxnetwork args:
 
         base_reg, dropout_reg
-
-## Logging
----
-
-By default, training logs are saved within 
-
-        train_logs/<model>/<dataset>/<datetime>/
-
-but can be set using 
-
-        python train.py --dataset <dataset> --log_dir another_dir/
-
-which would save the logs to:
-
-       another_dir/<model>/<dataset>/<datetime>/
-
-During each run, the following are saved:
-
-- embeddings for train, val, and test set
-- model weights (in the wandb dir)
-- hyperparams (in the wandb dir)
-
-## Model Class
----
-
-To keep a consistent model forward call behavior, all models return the same pair of outputs
-
-        outputs, z_rep = model(data)
-
-- outputs: predictions made my 1 or more heads
-- z_rep: latent representation
-
-
-## Optimizing in latent space
----
-
-To run the gradient-free optimization algorithms
-
-        usage: run_optim.py [-h] --model MODEL --embeddings EMBEDDINGS --dataset DATASET --weights WEIGHTS [--n_steps N_STEPS] [--save_dir SAVE_DIR]
-
-which will run the currently implemented algorithms and save plots of their optimization trajectories
-
-
-        optional arguments:
-        -h, --help            show this help message and exit
-        --model MODEL
-        --embeddings EMBEDDINGS
-        --dataset DATASET
-        --weights WEIGHTS
-        --n_steps N_STEPS
-        --save_dir SAVE_DIR
 
 
 ## Original data sources
