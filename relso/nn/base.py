@@ -12,7 +12,6 @@ import argparse
 import wandb
 
 
-
 import relso.utils.eval_utils as eval_utils
 
 # -------------------------
@@ -25,15 +24,14 @@ class BaseModel(LightningModule):
         if isinstance(hparams, dict):
             hparams = argparse.Namespace(**hparams)
 
-        self.save_hyperparameters()
+        # self.save_hyperparameters()
 
-        self.hparams = hparams
+        # self.hparams = hparams
 
-        self.lr = self.hparams.lr
-
+        self.lr = hparams.lr
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.parameters(), lr=self.lr),
+        opt = (torch.optim.Adam(self.parameters(), lr=self.lr),)
         return opt
 
     def shared_step(self, batch):
@@ -51,23 +49,22 @@ class BaseModel(LightningModule):
 
         return loss_dict
 
-
     def training_step(self, batch, batch_idx):
 
         preds, targets = self.shared_step(batch)
 
-        assert len(preds) == len(targets), f'preds: {len(preds)} targs: {len(targets)}'
+        assert len(preds) == len(targets), f"preds: {len(preds)} targs: {len(targets)}"
 
-        train_loss, train_loss_logs  = self.loss_function(predictions=preds,
-                                                        targets=targets)
+        train_loss, train_loss_logs = self.loss_function(
+            predictions=preds, targets=targets
+        )
 
-        train_loss_logs = self.relabel(train_loss_logs, 'train_')
+        train_loss_logs = self.relabel(train_loss_logs, "train_")
 
         # result = pl.TrainResult(minimize=train_loss)
         self.log_dict(train_loss_logs, on_step=True, on_epoch=False)
 
         return train_loss
-
 
     def loss_function(self, predictions, targets, valid_step=False):
         """
@@ -113,16 +110,14 @@ class BaseModelVAE(LightningModule):
         self.mu = None
         self.logvar = None
 
-
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
-
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
+        std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
 
-        return mu + eps*std
+        return mu + eps * std
 
     def shared_step(self, batch):
 
@@ -139,26 +134,23 @@ class BaseModelVAE(LightningModule):
 
         return loss_dict
 
-
     def training_step(self, batch, batch_idx):
 
         preds, targets = self.shared_step(batch)
 
-        assert len(preds) == len(targets), f'preds: {len(preds)} targs: {len(targets)}'
+        assert len(preds) == len(targets), f"preds: {len(preds)} targs: {len(targets)}"
 
-        train_loss, train_loss_logs  = self.loss_function(predictions=preds,
-                                                        targets=targets,
-                                                        mu=self.mu,
-                                                        logvar = self.logvar)
+        train_loss, train_loss_logs = self.loss_function(
+            predictions=preds, targets=targets, mu=self.mu, logvar=self.logvar
+        )
 
-        train_loss_logs = self.relabel(train_loss_logs, 'train_')
+        train_loss_logs = self.relabel(train_loss_logs, "train_")
 
         # result = pl.TrainResult(minimize=train_loss)
         self.log_dict(train_loss_logs, on_step=True, on_epoch=False)
 
         return train_loss
 
- 
     def loss_function(self, predictions, targets, mu, logvar, valid_step=False):
         """
         takes in predictions and targets
@@ -201,10 +193,3 @@ class BaseVAEParamModule(nn.Module):
         var = self.var_layer(h)
 
         return mu, var
-
-
-
-
-
-
-
