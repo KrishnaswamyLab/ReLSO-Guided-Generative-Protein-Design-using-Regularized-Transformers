@@ -38,10 +38,17 @@ First, install dependencies
 git clone https://github.com/KrishnaswamyLab/ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers.git
 
 
-# install project   
+# install requirements
+
+# with conda
+conda env create -f relso_env.yml
+
+# with pip
+pip install -r requirements.txt
+
+# install relso
 cd ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers 
 pip install -e .   
-pip install -r requirements.txt
  ```   
 
 ## Usage
@@ -62,6 +69,17 @@ python train_relso.py  --data gifford
 ### available auxnetwork args:
 
         base_reg
+
+
+
+
+### Running optimization algorithms 
+ 
+ ```bash
+python run_optim.py --weights <path to ckpt file>/model_state.ckpt --embeddings  <path to embeddings file>train_embeddings.npy --dataset gifford
+```
+---
+
 
 
 ## Original data sources
