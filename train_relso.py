@@ -4,13 +4,9 @@ import os
 import numpy as np
 import argparse
 from argparse import ArgumentParser
-from phate import PHATE
-from sklearn.decomposition import PCA
 
 # from sklearn.metrics import r2_score
-from scipy.stats import pearsonr as r2_score
-import matplotlib.pyplot as plt
-import wandb
+# import wandb
 
 import torch
 from torch import nn, optim
@@ -119,12 +115,7 @@ if __name__ == "__main__":
     now = datetime.datetime.now()
     date_suffix = now.strftime("%Y-%m-%d-%H-%M-%S")
 
-    if cl_args.log_dir and cl_args.log_dir == "e2e":
-        save_dir = (
-            f"end2end_logs/{cl_args.model}_{cl_args.dataset}_{cl_args.alpha_val}/"
-        )
-
-    elif cl_args.log_dir:
+    if cl_args.log_dir:
         save_dir = cl_args.log_dir + f"relso/{cl_args.dataset}/{date_suffix}/"
 
     else:
@@ -180,9 +171,7 @@ if __name__ == "__main__":
         logger=wandb_logger,
         fast_dev_run=cl_args.dev,
         gradient_clip_val=1,
-        auto_lr_find=cl_args.auto_lr,
-        automatic_optimization=False,
-    )
+        auto_lr_find=cl_args.auto_lr    )
     # automatic_optimization= not cl_args.track_grads)
 
     # Run learning rate finder if selected
@@ -203,7 +192,7 @@ if __name__ == "__main__":
 
     trainer.fit(
         model=model,
-        train_dataloader=data.train_dataloader(),
+        train_dataloaders=data.train_dataloader(),
         val_dataloaders=data.valid_dataloader(),
     )
 
@@ -276,160 +265,11 @@ if __name__ == "__main__":
     np.save(save_dir + "valid_embeddings.npy", valid_embed)
     np.save(save_dir + "test_embeddings.npy", test_embed)
 
-    print("logging plots")
 
     # ---------------------
-    # PCA
+    # SMOOTHNESS EVALUATIONS
     # ---------------------
-    print("running PCA on embeddings")
-    train_pca_coords = PCA(n_components=2).fit_transform(train_embed)
-    valid_pca_coords = PCA(n_components=2).fit_transform(valid_embed)
-    test_pca_coords = PCA(n_components=2).fit_transform(test_embed)
-
-    # PCA plot - FITNESS VALUES
-    fig, ax = plt.subplots(1, 3, figsize=(30, 10))
-
-    # TRAIN SET
-    im1 = ax[0].scatter(
-        train_pca_coords[:, 0], train_pca_coords[:, 1], c=train_targs.numpy(), s=5
-    )
-
-    ax[0].title.set_text("train set embedding PCA")
-    plt.colorbar(im1, ax=ax[0])
-
-    # VALID SET
-    im2 = ax[1].scatter(
-        valid_pca_coords[:, 0], valid_pca_coords[:, 1], c=valid_targs.numpy(), s=5
-    )
-
-    ax[1].title.set_text("valid set embedding PCA")
-    plt.colorbar(im2, ax=ax[1])
-
-    # TEST SET
-    im3 = ax[2].scatter(
-        test_pca_coords[:, 0], test_pca_coords[:, 1], c=test_targs.numpy(), s=10
-    )
-
-    ax[2].title.set_text("test set embedding PCA")
-    plt.colorbar(im3, ax=ax[2])
-
-    wandb_logger.experiment.log({"latent space PCA w fitness values": wandb.Image(plt)})
-
-    # PCA plot - Sequence Distance Values
-    fig, ax = plt.subplots(1, 3, figsize=(30, 10))
-
-    # TRAIN SET
-    im1 = ax[0].scatter(
-        train_pca_coords[:, 0], train_pca_coords[:, 1], c=data.train_split_seqd, s=5
-    )
-
-    ax[0].title.set_text("train set embedding PCA")
-    plt.colorbar(im1, ax=ax[0])
-
-    # VALID SET
-    im2 = ax[1].scatter(
-        valid_pca_coords[:, 0], valid_pca_coords[:, 1], c=data.valid_split_seqd, s=5
-    )
-
-    ax[1].title.set_text("valid set embedding PCA")
-    plt.colorbar(im2, ax=ax[1])
-
-    # TEST SET
-    im3 = ax[2].scatter(
-        test_pca_coords[:, 0], test_pca_coords[:, 1], c=data.test_split_seqd, s=10
-    )
-
-    ax[2].title.set_text("test set embedding PCA")
-    plt.colorbar(im3, ax=ax[2])
-
-    wandb_logger.experiment.log(
-        {"latent space PCA w sequence distances": wandb.Image(plt)}
-    )
-
-    # ---------------------
-    # PHATE
-    # ---------------------
-
-    try:
-        train_embed_phate = PHATE(n_components=2).fit_transform(train_embed)
-        valid_embed_phate = PHATE(n_components=2).fit_transform(valid_embed)
-        test_embed_phate = PHATE(n_components=2).fit_transform(test_embed)
-
-        np.save(save_dir + "train_phate_coords.npy", train_embed_phate)
-        np.save(save_dir + "valid_phate_coords.npy", valid_embed_phate)
-        np.save(save_dir + "test_phate_coords.npy", test_embed_phate)
-
-        # PHATE plot - FITNESS VALUES
-        # -------------------------------------
-        fig, ax = plt.subplots(1, 3, figsize=(30, 10))
-
-        # TRAIN SET
-        im1 = ax[0].scatter(
-            train_embed_phate[:, 0], train_embed_phate[:, 1], c=train_targs.numpy(), s=5
-        )
-
-        ax[0].title.set_text("train set embedding PHATE")
-        plt.colorbar(im1, ax=ax[0])
-
-        # VALID SET
-        im2 = ax[1].scatter(
-            valid_embed_phate[:, 0], valid_embed_phate[:, 1], c=valid_targs.numpy(), s=5
-        )
-
-        ax[1].title.set_text("valid set embedding PHATE")
-        plt.colorbar(im2, ax=ax[1])
-
-        # TEST SET
-        im3 = ax[2].scatter(
-            test_embed_phate[:, 0], test_embed_phate[:, 1], c=test_targs.numpy(), s=10
-        )
-
-        ax[2].title.set_text("test set embedding PHATE")
-        plt.colorbar(im3, ax=ax[2])
-
-        wandb_logger.experiment.log(
-            {"latent space PHATE  w fitness values": wandb.Image(plt)}
-        )
-
-        # PHATE plot SEQ DISTANCES
-        # -------------------------------------
-        fig, ax = plt.subplots(1, 3, figsize=(30, 10))
-
-        # TRAIN SET
-        im1 = ax[0].scatter(
-            train_embed_phate[:, 0],
-            train_embed_phate[:, 1],
-            c=data.train_split_seqd,
-            s=5,
-        )
-
-        ax[0].title.set_text("train set embedding PHATE")
-        plt.colorbar(im1, ax=ax[0])
-
-        # VALID SET
-        im2 = ax[1].scatter(
-            valid_embed_phate[:, 0],
-            valid_embed_phate[:, 1],
-            c=data.valid_split_seqd,
-            s=5,
-        )
-
-        ax[1].title.set_text("valid set embedding PHATE")
-        plt.colorbar(im2, ax=ax[1])
-
-        # TEST SET
-        im3 = ax[2].scatter(
-            test_embed_phate[:, 0], test_embed_phate[:, 1], c=data.test_split_seqd, s=10
-        )
-
-        ax[2].title.set_text("test set embedding PHATE")
-        plt.colorbar(im3, ax=ax[2])
-
-        wandb_logger.experiment.log(
-            {"latent space PHATE w sequence distances": wandb.Image(plt)}
-        )
-    except:
-        print("PHATE run failed")
+  
 
     print("getting smoothness values")
 
@@ -454,40 +294,11 @@ if __name__ == "__main__":
         wandb_logger=wandb_logger,
     )
 
-    # ----------------------------
-    # R2 PLOTS
-    # ----------------------------
-    print("creating R2 plots ")
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(train_fit_pred, train_targs, s=10, alpha=0.5)
+   
 
-    ax.set_xlabel("predicted enrichment", fontsize=10)
-    ax.set_ylabel("true enrichment", fontsize=10)
-
-    wandb_logger.experiment.log(
-        {" train set pred vs true enrichment": wandb.Image(plt)}
-    )
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(valid_fit_pred, valid_targs, s=10, alpha=0.5)
-
-    ax.set_xlabel("predicted enrichment", fontsize=10)
-    ax.set_ylabel("true enrichment", fontsize=10)
-
-    wandb_logger.experiment.log(
-        {" valid set pred vs true enrichment": wandb.Image(plt)}
-    )
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(test_fit_pred, test_targs, s=10, alpha=0.5)
-
-    ax.set_xlabel("predicted enrichment", fontsize=10)
-    ax.set_ylabel("true enrichment", fontsize=10)
-
-    wandb_logger.experiment.log({" test pred vs true enrichment": wandb.Image(plt)})
-
-    # Reconstruction evaluations
-    # ------------------------------
+    # ------------------------------------------------
+    # RECONSTRUCTION EVALUATIONS
+    # ------------------------------------------------
 
     print("running reconstruction evaluations")
     eval_utils.get_all_recon_pred_metrics(

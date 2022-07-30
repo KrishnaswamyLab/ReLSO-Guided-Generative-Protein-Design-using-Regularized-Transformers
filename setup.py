@@ -4,17 +4,17 @@ from setuptools import setup, find_packages
 
 setup(name='relso',
       version='0.0.1',
-      description='Sequence to Fitness Learning',
+      description='Regularized latent space optimization for protein sequences',
       author='Krishnaswamy Lab',
-      author_email='',
-      url='https://github.com/ec1340/relso',  # REPLACE WITH YOUR OWN GITHUB PROJECT LINK
-    #   install_requires=[
-    #         'pytorch-lightning'
-    #          'torch',
-    #          'pytorch-lightning',
-    #         'wandb',
-    #         'phate',
-    #         'networkx'],
+      url='https://github.com/KrishnaswamyLab/ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers',  # REPLACE WITH YOUR OWN GITHUB PROJECT LINK
+      install_requires=[
+            'numpy',
+             'torch',
+             'pytorch-lightning',
+            'wandb',
+            'sklearn',
+            'matplotlib',
+            'networkx'],
 
-    #   packages=find_packages()
+      packages=find_packages()
       )

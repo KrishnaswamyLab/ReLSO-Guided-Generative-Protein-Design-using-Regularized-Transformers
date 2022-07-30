@@ -1,0 +1,5 @@
+train_logs/
+optim_logs/
+**/__pycache__
+**/.DS_Store
+**/.vscode

@@ -425,11 +425,8 @@ def nn_hill_climbing_embedding(initial_embedding, oracle, dataset_embeddings,
 # Gradient Methods
 ############################
 
-
-# TODO: convert to py class
-
-def grad_ascent(initial_embedding, train_embeddings,
-                train_data, model, N_steps, lr, cycle=False):
+def grad_ascent(initial_embedding, model, N_steps, lr, cycle=False,
+                 noise=False, sigma=0.001):
     
     #need to pass the sequence through the network layers for gradient to be taken, so cycle the embedding once
     model.requires_grad_(True)
@@ -445,7 +442,7 @@ def grad_ascent(initial_embedding, train_embeddings,
     curr_embedding = torch.tensor(initial_embedding, requires_grad=True).reshape(-1, embed_dim)
     curr_fit = model.regressor_module(curr_embedding)
     
-    print("starting fitness: {}".format(curr_fit))
+    #print("starting fitness: {}".format(curr_fit))
 
     # save step 0 info
     out_embedding_array[0] = curr_embedding.reshape(1,embed_dim).detach().numpy()
@@ -457,12 +454,16 @@ def grad_ascent(initial_embedding, train_embeddings,
         model.train()
         
         grad = torch.autograd.grad(curr_fit, curr_embedding)[0] # get gradient
-                
+
+        if noise:
+            grad += torch.normal(torch.zeros(grad.size()),sigma)     
+
         grad_list.append(grad.detach())
 
+        # curr_embedding = curr_embedding.detach()
         # update step
         update_step = grad * lr
-        curr_embedding += update_step 
+        curr_embedding = curr_embedding +  update_step 
         
         # cycle bool
         model = model.eval()
@@ -474,9 +475,7 @@ def grad_ascent(initial_embedding, train_embeddings,
         curr_fit = model.regressor_module(curr_embedding)
         
         # save step i info
-        out_embedding_array[step] = curr_embedding
+        out_embedding_array[step] = curr_embedding.detach().numpy()
         out_fit_array[step] = curr_fit.detach().numpy()
         
-    return out_embedding_array, out_fit_array, grad_list
-
-
+    return out_embedding_array, out_fit_array
