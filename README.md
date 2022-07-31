@@ -7,6 +7,8 @@
 -->
 
 [![Paper](https://img.shields.io/badge/arxiv-2006.06885-B31B1B.svg)](https://arxiv.org/abs/2201.09948)
+
+[![DOI](https://zenodo.org/badge/436740631.svg)](https://zenodo.org/badge/latestdoi/436740631)
   
 </div>
 
