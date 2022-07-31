@@ -3,20 +3,12 @@
  
 # ReLSO: A Transformer-based Model for Latent Space Optimization and Generation of Proteins
 <!-- 
-[![Paper](http://img.shields.io/badge/paper-arxiv.2006.06885.svg)](https://arxiv.org/abs/2006.06885)
-
-[![Conference](http://img.shields.io/badge/ICLR-GRL+-2020-4b44ce.svg)](https://papers.nips.cc/book/advances-in-neural-information-processing-systems-31-2018)  
- -->
+[![Paper](http://img.shields.io/badge/paper-arxiv.2006.06885.svg)](https://arxiv.org/abs/2201.09948)
+-->
 
 [![Paper](https://img.shields.io/badge/arxiv-2006.06885-B31B1B.svg)](https://arxiv.org/abs/2201.09948)
-
-
-
-<!--  
-Conference   
--->   
+  
 </div>
-# ReLSO 
 
 Improved Fitness Optimization Landscapes
 for Sequence Design
