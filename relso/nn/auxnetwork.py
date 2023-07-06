@@ -1,9 +1,6 @@
 import torch
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
-
-import pytorch_lightning as pl
-from pytorch_lightning.core.lightning import LightningModule
 
 
 class BaseRegressor(nn.Module):
@@ -41,19 +38,34 @@ class DropoutRegressor(nn.Module):
         y_hat = self.fc2(h)
         return y_hat
 
+class SpectralRegressor(nn.Module):
+    def __init__(self, hparams):
+        super(SpectralRegressor, self).__init__()
+
+        latent_dim = hparams.latent_dim
+        
+        self.fc1 = nn.utils.spectral_norm(nn.Linear(latent_dim,64))
+        self.fc2 = nn.utils.spectral_norm(nn.Linear(64,1))
+        self.nonlin = nn.ReLU()
+
+    def forward(self, z):
+
+        h = self.nonlin(self.fc1(z))
+        y_hat = self.fc2(h)
+
+        return y_hat
 
 def str2auxnetwork(auxnetwork_name):
     """returns an uninitialized model module
-
     Args:
         cl_arg ([type]): [description]
-
     Returns:
         [type]: [description]
     """
     # model dict
     auxnetwork_dict = {'base_reg': BaseRegressor,
-                'dropout_reg': DropoutRegressor}
+                'dropout_reg': DropoutRegressor,
+                'spectral_reg': SpectralRegressor}
 
     auxnetwork = auxnetwork_dict[auxnetwork_name]
 

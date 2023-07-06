@@ -8,6 +8,8 @@
 
 [![Paper](https://img.shields.io/badge/arxiv-2006.06885-B31B1B.svg)](https://arxiv.org/abs/2201.09948)
 
+[![Nature Machine Intelligence](https://img.shields.io/badge/Nature%20Machine%20Intelligence-2022-<COLOR>.svg)](https://www.nature.com/articles/s42256-022-00532-1)
+
 [![DOI](https://zenodo.org/badge/436740631.svg)](https://zenodo.org/badge/latestdoi/436740631)
   
 </div>
@@ -39,38 +41,66 @@ and efficient optimization of protein sequences.
 
 This repo accompanies the following publication:
 
-*Egbert Castro, Abhinav Godavarthi, Julien Rubinfien, Smita Krishnaswamy. Guided Generative Protein Design using Regularized Transformers. Nature Machine Intelligence, in review (2021).*
+Castro, Egbert, Abhinav Godavarthi, Julian Rubinfien, Kevin Givechian, Dhananjay Bhaskar, and Smita Krishnaswamy. "Transformer-based protein generation with regularized latent space optimization." Nature Machine Intelligence 4, no. 10 (2022): 840-851.
 
-## How to run   
+
+
+## Setup
 ---
 
-First, install dependencies   
+### 1. Clone project
 ```bash
 # clone project   
 git clone https://github.com/KrishnaswamyLab/ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers.git
+```
 
+### 2. Install PyTorch
 
-# install requirements
+see [PyTorch Installation page](https://pytorch.org/get-started/locally/) for more details. For convenience, here are some common options
 
-# with conda
-conda env create -f relso_env.yml
+```bash
+# make conda environment
+conda create --name relsoenv python=3.9
+conda activate relsoenv
 
-# with pip
-pip install -r requirements.txt
+# install pytorch
+# GPU (linux)
+pip3 install torch torchvision torchaudio
 
-# install relso
-cd ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers 
+# CPU only (linux)
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# CPU only (mac)
+pip3 install torch torchvision torchaudio
+```
+
+### 3. Install other dependencies
+```bash
+python -m pip install networkx pytorch-lightning==1.9 wandb scikit-learn pandas matplotlib gdown phate
+```   
+
+### 4. Install ReLSO
+
+```bash  
 pip install -e .   
- ```   
+```   
+
+
+
 
 ## Usage
 
 ### Training models
  
  ```bash
-# run training script
+# GPU training
 python train_relso.py  --data gifford
+
+# CPU training
+python train_relso.py  --data gifford --cpu
 ```
+
+
 ---
 *note: if arg option is not relevant to current model selection, it will not be used. See init method of each model to see what's used.
 
@@ -83,6 +113,30 @@ python train_relso.py  --data gifford
         base_reg
 
 
+### Downloading Trained Models
+
+ ```bash
+bash download_weights.sh
+```
+
+which will create a directory called `relso_model_weights`
+
+```
+❯ tree relso_model_weights -L 1
+relso_model_weights
+├── model_embeddings
+├── model_embeddings.zip
+├── trained_models
+├── trained_models.json
+└── trained_models.zip
+
+2 directories, 3 files
+```
+
+
+
+#### Examples
+1. Loading GIFFORD Model
 
 
 ### Running optimization algorithms 

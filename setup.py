@@ -3,8 +3,10 @@
 from setuptools import setup
 
 setup(name='relso',
-      version='0.0.1',
+      version='1.0.0',
       description='Regularized latent space optimization for protein sequences',
       author='Krishnaswamy Lab',
       url='https://github.com/KrishnaswamyLab/ReLSO-Guided-Generative-Protein-Design-using-Regularized-Transformers',  
+      package_dir={"relso": "relso"},
+
       )

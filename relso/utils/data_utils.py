@@ -4,7 +4,6 @@ Helper functions for data processing
 """
 import numpy as np
 import torch
-import scipy
 
 #-----------
 # CoNSTANTS

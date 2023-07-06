@@ -1,23 +1,15 @@
-import math
-import numpy as np
 
 import torch
-from torch import nn, optim
-from torch.nn import functional as F
+from torch import nn
 
 import pytorch_lightning as pl
-from pytorch_lightning.core.lightning import LightningModule
 
 import argparse
-import wandb
-
-
-import relso.utils.eval_utils as eval_utils
 
 # -------------------------
 # BASE MODEL
 # -------------------------
-class BaseModel(LightningModule):
+class BaseModel(pl.LightningModule):
     def __init__(self, hparams=None):
         super(BaseModel, self).__init__()
 
@@ -95,7 +87,7 @@ class BaseModel(LightningModule):
         return NotImplementedError
 
 
-class BaseModelVAE(LightningModule):
+class BaseModelVAE(pl.LightningModule):
     def __init__(self, hparams=None):
         super(BaseModelVAE, self).__init__()
 

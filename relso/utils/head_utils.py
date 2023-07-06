@@ -2,14 +2,11 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import wandb
 from phate import PHATE
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import griddata
 
 
 import torch 
