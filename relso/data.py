@@ -4,17 +4,13 @@ for loading data into model-ready dataloaders
 """
 
 import pandas as pd
-import numpy as np
-import glob
 from sklearn.model_selection import train_test_split
 
 import torch
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import  DataLoader
 import pytorch_lightning as pl
 
 from relso.utils import data_utils
-from scipy.spatial.distance import cdist
-# import selfies as sf
 
 # ---------------------
 # CONSTANTS
@@ -77,8 +73,8 @@ class EnsGradData(pl.LightningDataModule):
 
         print(f'loading data from: {self.data_dir}')
 
-        print(f'setting up seq distances')
-        self._setup_distances()
+        # print(f'setting up seq distances')
+        # self._setup_distances()
         self._prepare_data()
 
         print(f'setting up task: {self.task}')
@@ -94,28 +90,6 @@ class EnsGradData(pl.LightningDataModule):
         train_df = pd.read_csv(str(self.data_dir + 'gifford_data/train_data.csv'))
         test_df = pd.read_csv(str(self.data_dir + 'gifford_data/test_data.csv'))
 
-        if self.seqdist_cutoff:
-
-            print(f'sequence distance split chosen with distance = {self.seqdist_cutoff}')
-            full_data_df = pd.concat((train_df, test_df), 0)
-            full_seqdist = np.concatenate((self.train_seq_dist.reshape(-1,1),
-                                            self.test_seq_dist.reshape(-1,1)), 0).reshape(-1).astype(int)
-
-            print(f'seq dist stats:\nmin: {full_seqdist.min()}\nmax: {full_seqdist.max()} \nmean: {full_seqdist.mean()}')
-
-            assert len(full_data_df) == len(full_seqdist), 'data dfs and seq distance arrays do no match'
-
-            dataset_indx = np.arange(len(full_seqdist))
-            below_cutoff_indx = dataset_indx[full_seqdist <= int(self.seqdist_cutoff)]
-            above_cutoff_indx = dataset_indx[full_seqdist > int(self.seqdist_cutoff)]
-
-            train_df = full_data_df.iloc[below_cutoff_indx]
-            test_df = full_data_df.iloc[above_cutoff_indx]
-
-            self.train_seq_dist = full_seqdist[below_cutoff_indx]
-            self.test_seq_dist = full_seqdist[above_cutoff_indx]
-
-
         train_seqs, train_fitness = data_utils.load_raw_giff_data(train_df)
         test_seqs, test_fitness = data_utils.load_raw_giff_data(test_df)
 
@@ -130,14 +104,6 @@ class EnsGradData(pl.LightningDataModule):
         print(f'train/test sizes: {(self.train_N, self.test_N)}')
         print(f'seq len: {self.seq_len}')
 
-
-    def _setup_distances(self):
-
-        # starts at 1 since header is included in seq distances :(
-        self.train_seq_dist = torch.from_numpy(np.loadtxt(self.data_dir + 'seq_distances/gifford_train_data_seq_distances.csv')[1:]).reshape(-1)
-        self.test_seq_dist = torch.from_numpy(np.loadtxt(self.data_dir + 'seq_distances/gifford_test_data_seq_distances.csv') [1:]).reshape(-1)
-
-        print(f'seq distances shapes: {self.train_seq_dist.shape}\t{self.test_seq_dist.shape}')
 
     def _setup_task(self):
 
@@ -168,27 +134,21 @@ class EnsGradData(pl.LightningDataModule):
         val_size = self.train_N - train_size
         print(f'split sizes\ntrain: {train_size}\nvalid: {val_size}')
 
-        train_all_data = [train_data, train_targets, train_fitness, self.train_seq_dist]
+        train_all_data = [train_data, train_targets, train_fitness]
+
         train_all_data_numpy = [x.numpy() for x in train_all_data]
 
-        t_dat, v_dat, t_tar, v_tar, t_fit, v_fit, t_seqd, v_seqd = train_test_split(*train_all_data_numpy,
+        t_dat, v_dat, t_tar, v_tar, t_fit, v_fit = train_test_split(*train_all_data_numpy,
                                                                     train_size=train_size,
                                                                     random_state=42)
 
-        train_split_list = [torch.from_numpy(x) for x in [t_dat, t_tar, t_fit, t_seqd]]
-        valid_split_list = [torch.from_numpy(x) for x in [v_dat, v_tar, v_fit, v_seqd]]
+        train_split_list = [torch.from_numpy(x) for x in [t_dat, t_tar, t_fit]]
+        valid_split_list = [torch.from_numpy(x) for x in [v_dat, v_tar, v_fit]]
 
-        self.train_dataset = torch.utils.data.TensorDataset(*train_split_list[:-1])
-        self.valid_dataset = torch.utils.data.TensorDataset(*valid_split_list[:-1])
-
-        # self.train_dataset = torch.utils.data.TensorDataset(t_dat, t_tar, t_fit)
-        # self.valid_dataset = torch.utils.data.TensorDataset(v_dat, v_tar, v_fit)
+        self.train_dataset = torch.utils.data.TensorDataset(*train_split_list)
+        self.valid_dataset = torch.utils.data.TensorDataset(*valid_split_list)
 
         self.test_dataset = torch.utils.data.TensorDataset(test_data, test_targets, test_fitness)
-
-        self.train_split_seqd = t_seqd
-        self.valid_split_seqd = v_seqd
-        self.test_split_seqd = self.test_seq_dist
 
     def setup(self, stage=None):
 
@@ -202,14 +162,14 @@ class EnsGradData(pl.LightningDataModule):
         print ("setting up test split")
         self.test_split = self.test_dataset
 
-    def train_dataloader(self):
-        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = True)
+    def train_dataloader(self, shuffle_bool=True):
+        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def valid_dataloader(self):
-        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = False)
+    def valid_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def test_dataloader(self):
-        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = False)
+    def test_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
 
 # ----------------------------
@@ -237,8 +197,7 @@ class MutData(pl.LightningDataModule):
         self.task = task
 
         print(f'loading dataset: {self.dataset} from: {self.data_dir}')
-        print(f'setting up seq distances')
-        self._setup_distances()
+        
         self._prepare_data()
 
         print(f'setting up task: {self.task}')
@@ -252,27 +211,6 @@ class MutData(pl.LightningDataModule):
         # load files
         train_df = pd.read_csv(str(self.data_dir + 'mut_data/' + self.train_data_file), header=None)
         test_df = pd.read_csv(str(self.data_dir + 'mut_data/' + self.test_data_file),  header=None)
-
-        if self.seqdist_cutoff:
-            print(f'sequence distance split chosen with distance = {self.seqdist_cutoff}')
-            full_data_df = pd.concat((train_df, test_df), 0)
-            full_seqdist = np.concatenate((self.train_seq_dist.reshape(-1,1),
-                                            self.test_seq_dist.reshape(-1,1)), 0).reshape(-1).astype(int)
-
-            print(f'seq dist stats:\nmin: {full_seqdist.min()}\nmax: {full_seqdist.max()} \nmean: {full_seqdist.mean()}')
-
-            assert len(full_data_df) == len(full_seqdist), 'data dfs and seq distance arrays do no match'
-
-            dataset_indx = np.arange(len(full_seqdist))
-
-            below_cutoff_indx = dataset_indx[full_seqdist <= int(self.seqdist_cutoff)]
-            above_cutoff_indx = dataset_indx[full_seqdist > int(self.seqdist_cutoff)]
-
-            train_df = full_data_df.iloc[below_cutoff_indx]
-            test_df = full_data_df.iloc[above_cutoff_indx]
-
-            self.train_seq_dist = full_seqdist[below_cutoff_indx]
-            self.test_seq_dist = full_seqdist[above_cutoff_indx]
 
 
         train_seqs, train_fitness = data_utils.load_raw_mut_data(train_df)
@@ -300,13 +238,6 @@ class MutData(pl.LightningDataModule):
 
         print(f'train/test sizes: {(self.train_N, self.test_N)}')
         print(f'seq len: {self.seq_len}')
-
-    def _setup_distances(self):
-
-        self.train_seq_dist = torch.from_numpy(np.loadtxt(self.data_dir + 'seq_distances/' +  f'{self.dataset}_train_data_seq_distances.csv')).reshape(-1)
-        self.test_seq_dist = torch.from_numpy(np.loadtxt(self.data_dir + 'seq_distances/' + f'{self.dataset}_test_data_seq_distances.csv') ).reshape(-1)
-
-        print(f'seq distances shapes: {self.train_seq_dist.shape}\t{self.test_seq_dist.shape}')
 
     def _setup_task(self):
 
@@ -341,25 +272,19 @@ class MutData(pl.LightningDataModule):
         train_all_data = [train_data, train_targets, train_fitness, self.train_seq_dist]
         train_all_data_numpy = [x.numpy() for x in train_all_data ]
 
-        t_dat, v_dat, t_tar, v_tar, t_fit, v_fit, t_seqd, v_seqd = train_test_split(*train_all_data_numpy,
+        t_dat, v_dat, t_tar, v_tar, t_fit, v_fit = train_test_split(*train_all_data_numpy,
                                                                     train_size=train_size,
                                                                     random_state=42)
 
 
-        train_split_list = [torch.from_numpy(x) for x in [t_dat, t_tar, t_fit, t_seqd]]
-        valid_split_list = [torch.from_numpy(x) for x in [v_dat, v_tar, v_fit, v_seqd]]
+        train_split_list = [torch.from_numpy(x) for x in [t_dat, t_tar, t_fit]]
+        valid_split_list = [torch.from_numpy(x) for x in [v_dat, v_tar, v_fit]]
 
-        # train_split_list = [t_dat, t_tar, t_fit, t_seqd]
-        # valid_split_list = [v_dat, v_tar, v_fit, v_seqd]
-
-        self.train_dataset = torch.utils.data.TensorDataset(*train_split_list[:-1])
-        self.valid_dataset = torch.utils.data.TensorDataset(*valid_split_list[:-1])
+    
+        self.train_dataset = torch.utils.data.TensorDataset(*train_split_list)
+        self.valid_dataset = torch.utils.data.TensorDataset(*valid_split_list)
 
         self.test_dataset = torch.utils.data.TensorDataset(test_data, test_targets, test_fitness)
-
-        self.train_split_seqd = t_seqd
-        self.valid_split_seqd = v_seqd
-        self.test_split_seqd = self.test_seq_dist
 
 
     def setup(self, stage=None):
@@ -374,14 +299,15 @@ class MutData(pl.LightningDataModule):
         print ("setting up test split")
         self.test_split = self.test_dataset
 
-    def train_dataloader(self):
-        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = True)
+    def train_dataloader(self, shuffle_bool=True):
+        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def valid_dataloader(self):
-        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = False)
+    def valid_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def test_dataloader(self):
-        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = False)
+    def test_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = shuffle_bool)
+
 
 
 # ----------------------------
@@ -392,7 +318,6 @@ class TAPE(pl.LightningDataModule):
     def __init__(self, data_dir=ROOT_DATA_DIR,
                                 dataset='TAPE',
                                 task='next-step',
-                                train_val_split=0.7,
                                 batch_size=100,
                                 seqdist_cutoff=None):
         super().__init__()
@@ -410,8 +335,6 @@ class TAPE(pl.LightningDataModule):
         self.task = task
 
         print(f'loading dataset: {self.dataset} from: {self.data_dir}')
-        print(f'setting up seq distances')
-        self._setup_distances()
         self._prepare_data()
 
         print(f'setting up task: {self.task}')
@@ -443,15 +366,6 @@ class TAPE(pl.LightningDataModule):
 
         print(f'train/test/valid sizes: {(self.train_N, self.test_N, self.valid_N)}')
         print(f'seq len: {self.seq_len}')
-
-    def _setup_distances(self):
-
-        # starts at 1 since header is included in seq distances :(
-        self.train_seq_dist = np.loadtxt(self.data_dir + '/seq_distances/TAPE_train_data_seq_distances.csv')
-        self.test_seq_dist = np.loadtxt(self.data_dir + '/seq_distances/TAPE_test_data_seq_distances.csv')
-        self.val_seq_dist = np.loadtxt(self.data_dir + '/seq_distances/TAPE_valid_data_seq_distances.csv')
-
-        print(f'seq distances shapes: {self.train_seq_dist.shape}\t{self.test_seq_dist.shape}')
 
     def _setup_task(self):
 
@@ -492,9 +406,6 @@ class TAPE(pl.LightningDataModule):
         self.test_dataset = torch.utils.data.TensorDataset(test_data, test_targets, test_fitness)
         self.valid_dataset = torch.utils.data.TensorDataset(valid_data, valid_targets, valid_fitness)
 
-        self.train_split_seqd = self.train_seq_dist
-        self.valid_split_seqd = self.val_seq_dist
-        self.test_split_seqd = self.test_seq_dist
 
     def setup(self, stage=None):
 
@@ -509,14 +420,15 @@ class TAPE(pl.LightningDataModule):
         print ("setting up test split")
         self.test_split = self.test_dataset
 
-    def train_dataloader(self):
-        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = True)
+    def train_dataloader(self, shuffle_bool=True):
+        return DataLoader(self.train_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def valid_dataloader(self):
-        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = False)
+    def valid_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.valid_split, batch_size=self.batch_size, shuffle = shuffle_bool)
 
-    def test_dataloader(self):
-        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = False)
+    def test_dataloader(self, shuffle_bool=False):
+        return DataLoader(self.test_split, batch_size=self.batch_size, shuffle = shuffle_bool)
+
 
 
 def str2data(dataset_name):

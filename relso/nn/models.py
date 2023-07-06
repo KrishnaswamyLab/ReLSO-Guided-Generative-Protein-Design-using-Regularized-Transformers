@@ -1,12 +1,9 @@
-import math
-import numpy as np
+
 
 import torch
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
 
-import pytorch_lightning as pl
-from pytorch_lightning.core.lightning import LightningModule
 
 import argparse
 import wandb
@@ -132,9 +129,9 @@ class relso1(BaseModel):
 
         try:
             auxnetwork = str2auxnetwork(hparams.auxnetwork)
-            print(auxnetwork)
             self.regressor_module = auxnetwork(aux_hparams)
         except:
+            print('aux network loading failed - defaulting to SpectralRegressor')
             auxnetwork = str2auxnetwork("spectral")
             self.regressor_module = auxnetwork(aux_hparams)
 
@@ -382,17 +379,22 @@ class relso1(BaseModel):
             interp_loss = (0.5 * (inter_dist1 + inter_dist2) - 0.5 * tr_dists).mean()
             interp_loss = max(0, interp_loss) * self.interp_weight
         else:
-            interp_loss = 0
+            interp_loss = 0.0
 
         # negative sampling loss
         if self.dyn_neg_bool:
             neg_targets = (
                 torch.ones((self.neg_size), device=self.device) * self.neg_floor
             )
+
+            # print(f'neg_targets: {neg_targets}')
+
             neg_loss = nn.MSELoss()(extend_y.flatten(), neg_targets.flatten())
             neg_loss = neg_loss * self.neg_weight
+
+            # print(f'neg_loss: {neg_loss}')
         else:
-            neg_loss = 0
+            neg_loss = 0.0
 
         # RAE L_z loss
         # only penalize real zs

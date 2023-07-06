@@ -6,7 +6,6 @@ from torch import nn, optim
 from torch.nn import functional as F
 
 import pytorch_lightning as pl
-from pytorch_lightning.core.lightning import LightningModule
 
 import argparse
 import wandb

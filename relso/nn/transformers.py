@@ -6,17 +6,13 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 
-import pytorch_lightning as pl
-from pytorch_lightning.core.lightning import LightningModule
-
 import argparse
 import wandb
 
 
 from relso.nn.bneck import BaseBottleneck
-from relso.nn.pooling import AttnPooling
 
-from relso.nn.base import BaseModel, BaseModelVAE, BaseVAEParamModule
+from relso.nn.base import BaseModel
 from relso.nn.convolutional import Block
 from relso.nn.auxnetwork import str2auxnetwork
 

@@ -5,21 +5,15 @@ import numpy as np
 import argparse
 from argparse import ArgumentParser
 
-# from sklearn.metrics import r2_score
-# import wandb
-
-import torch
-from torch import nn, optim
 
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.core.lightning import LightningModule
 
 from relso.nn.models import relso1
 import relso.data as hdata
-from relso.utils import data_utils, eval_utils
+from relso.utils import eval_utils
 
 
 ########################
@@ -53,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, type=int)
     parser.add_argument("--log_dir", default=None, type=str)
     parser.add_argument("--project_name", default="relso_project", type=str)
+    parser.add_argument("--cpu", default=False, action="store_true")
 
     # training arguments
     parser.add_argument("--alpha_val", default=1.0, type=float)
@@ -65,14 +60,14 @@ if __name__ == "__main__":
     parser.add_argument("--reg_ramp", default=False, type=str2bool)
     parser.add_argument("--vae_ramp", default=True, type=str2bool)
 
-    parser.add_argument("--neg_samp", default=True, type=str2bool)
+    parser.add_argument("--neg_samp", default=False, type=str2bool)
     parser.add_argument("--neg_size", default=16, type=int)
     parser.add_argument("--neg_weight", default=0.8, type=float)
     parser.add_argument("--neg_floor", default=-2.0, type=float)
     parser.add_argument("--neg_norm", default=4.0, type=float)
     parser.add_argument("--neg_focus", default=False, type=str2bool)
 
-    parser.add_argument("--interp_samp", default=True, type=str2bool)
+    parser.add_argument("--interp_samp", default=False, type=str2bool)
     parser.add_argument("--interp_size", default=16, type=int)
     parser.add_argument("--interp_weight", default=0.001, type=float)
 
@@ -162,17 +157,41 @@ if __name__ == "__main__":
 
     model = relso1(hparams=cl_args)
 
-    trainer = pl.Trainer.from_argparse_args(
-        cl_args,
-        max_epochs=cl_args.n_epochs,
-        max_steps=300000,
-        gpus=cl_args.n_gpus,
-        # callbacks=[early_stop_callback],
-        logger=wandb_logger,
-        fast_dev_run=cl_args.dev,
-        gradient_clip_val=1,
-        auto_lr_find=cl_args.auto_lr    )
-    # automatic_optimization= not cl_args.track_grads)
+
+    if cl_args.cpu:
+        trainer = pl.Trainer.from_argparse_args(
+            cl_args,
+            max_epochs=cl_args.n_epochs,
+            accelerator="cpu",
+            # devices=1,
+            log_every_n_steps=min(len(data.train_dataloader()) // 2, 50),
+            logger=wandb_logger,
+
+        )
+
+    else:
+        trainer = pl.Trainer.from_argparse_args(
+            cl_args,
+            max_epochs=cl_args.n_epochs,
+            strategy="dp",
+            accelerator="gpu",
+            devices=cl_args.n_gpus,
+            log_every_n_steps=min(len(data.train_dataloader()) // 2, 50),
+            logger=wandb_logger,
+
+        )
+
+    # trainer = pl.Trainer.from_argparse_args(
+    #     cl_args,
+    #     max_epochs=cl_args.n_epochs,
+    #     max_steps=300000,
+    #     gpus=cl_args.n_gpus,
+    #     # callbacks=[early_stop_callback],
+    #     logger=wandb_logger,
+    #     fast_dev_run=cl_args.dev,
+    #     gradient_clip_val=1,
+    #     auto_lr_find=cl_args.auto_lr    )
+    # # automatic_optimization= not cl_args.track_grads)
 
     # Run learning rate finder if selected
     if cl_args.auto_lr:
@@ -203,6 +222,8 @@ if __name__ == "__main__":
     model.cpu()
 
     print("\ntraining complete!\n")
+
+
     # ---------------------
     # EVALUATION
     # ---------------------
